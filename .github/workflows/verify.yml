@@ -1,0 +1,53 @@
+# Gate on main.
+#
+# Production deploys from `main`, and a push there reaches anyone using the
+# live URL on their next refresh — there is no staging in between. So every
+# pull request into main must build and pass the test suite first.
+#
+# verify:providers is deliberately excluded. It makes live calls to TCGdex,
+# Scryfall and YGOPRODeck, which is exactly what we want when checking those
+# adapters by hand, and exactly what we do not want gating a merge: a
+# provider having a bad morning would block work that has nothing to do with
+# them. Run it locally with `npm run verify:providers`.
+
+name: Verify
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # 22 LTS. The code needs AbortSignal.any (Node 20.3+); nothing
+          # requires anything newer.
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck and build
+        run: npm run build
+
+      - name: Schema constraints (real Postgres via PGlite)
+        run: npm run verify:schema
+
+      - name: Browser storage backend
+        run: npm run verify:local
+
+      - name: Every page renders
+        run: npm run verify:render
+
+      - name: Valuation, profit and listing generation
+        run: npm run verify:valuation
