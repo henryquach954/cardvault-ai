@@ -70,6 +70,49 @@ Add to Home Screen**. The camera capture in the scan workflow works from there.
 
 ---
 
+## Working on it without breaking the live site
+
+Production deploys from `main`, and anyone using the live URL gets the new
+version on their next refresh. There is no staging in between, so `main`
+should only move when you mean it.
+
+```
+dev    ← do the work here. Push freely.
+main   ← only ever updated by merging dev. This is what users get.
+```
+
+**The loop:**
+
+```bash
+git checkout dev
+# ...make changes...
+npm run verify          # locally, all five harnesses
+git commit -am "what changed"
+git push                # CI runs; Vercel builds a private preview
+```
+
+When it is good, open a pull request from `dev` into `main` on GitHub. CI
+runs again on the PR; merging it deploys to production.
+
+```bash
+gh pr create --base main --head dev --fill
+```
+
+**CI** (`.github/workflows/verify.yml`) runs the build plus the four
+deterministic harnesses on every PR into `main` and every push to `dev`.
+`verify:providers` is excluded on purpose — it calls live third-party APIs,
+and a provider having a bad morning should not block an unrelated merge. Run
+that one by hand.
+
+**A caveat worth knowing:** GitHub will not *enforce* this on a private repo
+without a Pro plan, so nothing physically stops a direct push to `main`. The
+red X on a failing PR is advisory. The convention is yours to keep.
+
+Preview deployments are per-branch and private to your Vercel account. Do
+not hand a preview URL to anyone — send them the production URL.
+
+---
+
 ## Putting it online
 
 The app is a static site — `npm run build` produces `dist/`, which any static
