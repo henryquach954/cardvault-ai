@@ -1,0 +1,3 @@
+# A private business tool, not content. No reason for it to be indexed.
+User-agent: *
+Disallow: /

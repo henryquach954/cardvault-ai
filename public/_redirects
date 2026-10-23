@@ -1,0 +1,6 @@
+# SPA fallback for Netlify and Cloudflare Pages.
+#
+# CardVault is a single-page app: /scan, /inventory/:id and friends are
+# client-side routes with no file behind them. Without this, a direct visit
+# or a refresh on any route except / returns 404.
+/*    /index.html   200
